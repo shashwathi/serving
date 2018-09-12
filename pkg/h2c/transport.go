@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 
+	"go.uber.org/zap"
+
 	"golang.org/x/net/http2"
 )
 
@@ -15,9 +17,25 @@ func NewTransport() http.RoundTripper {
 	return &http2.Transport{
 		AllowHTTP: true,
 		DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
+
 			return net.Dial(netw, addr)
 		},
 	}
 }
 
 var DefaultTransport http.RoundTripper = NewTransport()
+
+func NewTransportWithLogger(logger *zap.SugaredLogger) http.RoundTripper {
+	return &http2.Transport{
+		AllowHTTP: true,
+		DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
+			logger.Infof("Recieved connection addr: %s network: %s ", addr, netw)
+			conn, err := net.Dial(netw, addr)
+			logger.Infof("Finished handling connection remote addr: %s ", conn.RemoteAddr())
+			if err != nil {
+				logger.Infof("Error handling connection remote addr: %s err: %s ", conn.RemoteAddr, err.Error())
+			}
+			return conn, err
+		},
+	}
+}
