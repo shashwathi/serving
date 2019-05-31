@@ -30,6 +30,14 @@ import (
 	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 )
 
+var defaultProbe = &corev1.Probe{
+	Handler: corev1.Handler{
+		TCPSocket: &corev1.TCPSocketAction{
+			Host: "127.0.0.1",
+		},
+	},
+}
+
 func TestRevisionDefaulting(t *testing.T) {
 	tests := []struct {
 		name string
@@ -46,8 +54,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(config.DefaultRevisionTimeoutSeconds),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
@@ -65,8 +74,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(config.DefaultRevisionTimeoutSeconds),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
@@ -96,8 +106,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(123),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
@@ -126,7 +137,8 @@ func TestRevisionDefaulting(t *testing.T) {
 						Name:     "bar",
 						ReadOnly: true,
 					}},
-					Resources: defaultResources,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 				RevisionSpec: v1beta1.RevisionSpec{
 					ContainerConcurrency: 1,
@@ -162,7 +174,8 @@ func TestRevisionDefaulting(t *testing.T) {
 								Name:     "bar",
 								ReadOnly: true,
 							}},
-							Resources: defaultResources,
+							Resources:      defaultResources,
+							ReadinessProbe: defaultProbe,
 						}},
 					},
 					ContainerConcurrency: 1,
@@ -183,8 +196,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(99),
 					PodSpec: corev1.PodSpec{
 						Containers: []corev1.Container{{
-							Image:     "foo",
-							Resources: defaultResources,
+							Image:          "foo",
+							Resources:      defaultResources,
+							ReadinessProbe: defaultProbe,
 						}},
 					},
 				},
@@ -200,9 +214,10 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(99),
 					PodSpec: corev1.PodSpec{
 						Containers: []corev1.Container{{
-							Name:      config.DefaultUserContainerName,
-							Image:     "foo",
-							Resources: defaultResources,
+							Name:           config.DefaultUserContainerName,
+							Image:          "foo",
+							Resources:      defaultResources,
+							ReadinessProbe: defaultProbe,
 						}},
 					},
 				},
@@ -226,8 +241,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(99),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
@@ -248,8 +264,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(config.DefaultRevisionTimeoutSeconds),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
@@ -272,8 +289,9 @@ func TestRevisionDefaulting(t *testing.T) {
 					TimeoutSeconds:       ptr.Int64(config.DefaultRevisionTimeoutSeconds),
 				},
 				DeprecatedContainer: &corev1.Container{
-					Name:      config.DefaultUserContainerName,
-					Resources: defaultResources,
+					Name:           config.DefaultUserContainerName,
+					Resources:      defaultResources,
+					ReadinessProbe: defaultProbe,
 				},
 			},
 		},
