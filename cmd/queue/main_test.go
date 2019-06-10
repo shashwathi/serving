@@ -18,6 +18,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -152,5 +153,74 @@ func TestCreateVarLogLink(t *testing.T) {
 	}
 	if got != want {
 		t.Errorf("Incorrect symlink = %q, want %q, diff: %s", got, want, cmp.Diff(got, want))
+	}
+}
+
+func TesttcpProberFailure(t *testing.T) {
+	prober := tcpProberFactory("127.0.0.1:12345", 2*time.Second)
+	if prober() {
+		t.Error("reported success when no server was available for connection")
+	}
+}
+
+func TestTCPProberSuccess(t *testing.T) {
+	prober := tcpProberFactory("127.0.0.1:12345", 10*time.Second)
+
+	queueProbed := false
+
+	go func() {
+		l, err := net.Listen("tcp", ":12345")
+		if err != nil {
+			t.Fatal("failed to start tcp listener")
+		}
+		defer l.Close()
+
+		conn, err := l.Accept()
+		if err != nil {
+			t.Fatal("we're done here")
+		}
+		defer conn.Close()
+		queueProbed = true
+	}()
+
+	// race condition. waiting for the listener...
+	time.Sleep(500 * time.Millisecond)
+	if !prober() {
+		t.Error("fail")
+	}
+
+	if !queueProbed {
+		t.Error("never pinged the server")
+	}
+}
+
+// FIXME race condition between starting listener and "accepting" connection
+func TestTCPProberDelayedSuccess(t *testing.T) {
+	prober := tcpProberFactory("127.0.0.1:12345", 2*time.Second)
+
+	queueProbed := false
+
+	go func() {
+		// FIXME sloooooooooooooow
+		time.Sleep(2 * time.Second)
+		l, err := net.Listen("tcp", ":12345")
+		if err != nil {
+			t.Fatal("failed to start tcp listener")
+		}
+		defer l.Close()
+		conn, err := l.Accept()
+		if err != nil {
+			t.Fatal("we're done here")
+		}
+		defer conn.Close()
+		queueProbed = true
+	}()
+
+	if !prober() {
+		t.Error("fail")
+	}
+
+	if !queueProbed {
+		t.Error("never pinged the server")
 	}
 }
