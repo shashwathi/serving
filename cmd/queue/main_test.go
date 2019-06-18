@@ -161,7 +161,7 @@ func TestCreateVarLogLink(t *testing.T) {
 func TestTCPFailure(t *testing.T) {
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   1,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -180,7 +180,7 @@ func TestTCPFailure(t *testing.T) {
 func TestUnimplementedProbe(t *testing.T) {
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   1,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler:          corev1.Handler{},
@@ -200,7 +200,7 @@ func TestTCPSuccess(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   2,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -219,7 +219,7 @@ func TestTCPSuccess(t *testing.T) {
 func TestHTTPFailureToConnect(t *testing.T) {
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   2,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -245,7 +245,7 @@ func TestHTTPBadResponse(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   5,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -271,7 +271,7 @@ func TestHTTPSuccess(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   10,
+		TimeoutSeconds:   5,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -289,7 +289,7 @@ func TestHTTPSuccess(t *testing.T) {
 
 func TestHTTPTimeout(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(5 * time.Second)
+		time.Sleep(3 * time.Second)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
@@ -298,7 +298,7 @@ func TestHTTPTimeout(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   4,
+		TimeoutSeconds:   2,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -325,7 +325,7 @@ func TestHTTPSuccessWithDelay(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   4,
+		TimeoutSeconds:   2,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
@@ -343,7 +343,7 @@ func TestHTTPSuccessWithDelay(t *testing.T) {
 
 func TestHTTPSuccessWithLongDelay(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(12 * time.Second)
+		time.Sleep(1 * time.Second)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
@@ -352,7 +352,7 @@ func TestHTTPSuccessWithLongDelay(t *testing.T) {
 
 	pb := newProbe(corev1.Probe{
 		PeriodSeconds:    1,
-		TimeoutSeconds:   14,
+		TimeoutSeconds:   2,
 		SuccessThreshold: 1,
 		FailureThreshold: 1,
 		Handler: corev1.Handler{
