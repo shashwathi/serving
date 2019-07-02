@@ -266,7 +266,7 @@ func createAdminHandlers(p *readiness.Probe) *http.ServeMux {
 	return mux
 }
 
-func probeQueueHealthPath(port int, timeout time.Duration) error {
+func probeQueueHealthPath(port int, timeout int) error {
 	url := fmt.Sprintf(healthURLTemplate, port)
 
 	// use aggressive retries
@@ -279,7 +279,7 @@ func probeQueueHealthPath(port int, timeout time.Duration) error {
 			// Do not use the cached connection
 			DisableKeepAlives: true,
 		},
-		Timeout: timeout,
+		Timeout: time.Duration(timeout) * time.Second,
 	}
 
 	res, err := httpClient.Get(url)
@@ -287,8 +287,7 @@ func probeQueueHealthPath(port int, timeout time.Duration) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to probe")
 	}
-
-	if res == nil || res.StatusCode != http.StatusOK {
+	if err := health.HTTPProbeParseResponse(res); err != nil {
 		return errors.New("probe returned not ready")
 	}
 
@@ -315,8 +314,7 @@ func knativeProbe(url string) error {
 			return false, nil
 		}
 		defer res.Body.Close()
-
-		return res.StatusCode == http.StatusOK, nil
+		return health.HTTPProbeParseResponse(res) == nil, nil
 	})
 
 	if lastErr != nil {
@@ -344,9 +342,8 @@ func parseProbe(ucProbe string) (*corev1.Probe, error) {
 func main() {
 	flag.Parse()
 
-	if *readinessProbeTimeout >= 0 {
-		pt := time.Duration(*readinessProbeTimeout) * time.Second
-		if err := probeQueueHealthPath(networking.QueueAdminPort, pt); err != nil {
+	if !(*readinessProbeTimeout < 0) {
+		if err := probeQueueHealthPath(networking.QueueAdminPort, *readinessProbeTimeout); err != nil {
 			// used instead of the logger to produce a concise event message
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

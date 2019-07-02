@@ -74,6 +74,14 @@ func HTTPProbe(config HTTPProbeConfigOptions) error {
 	if err != nil {
 		return err
 	}
+	if err := HTTPProbeParseResponse(res); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func HTTPProbeParseResponse(res *http.Response) error {
 	if res == nil {
 		return fmt.Errorf("httpGet probe failed to get response")
 	}
