@@ -22,12 +22,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"knative.dev/pkg/logging"
-	pkgmetrics "knative.dev/pkg/metrics"
-	_ "knative.dev/pkg/metrics/testing"
-	"knative.dev/pkg/ptr"
-	"knative.dev/pkg/system"
-	_ "knative.dev/pkg/system/testing"
 	"github.com/knative/serving/pkg/apis/networking"
 	"github.com/knative/serving/pkg/apis/serving"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -41,6 +35,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"knative.dev/pkg/logging"
+	pkgmetrics "knative.dev/pkg/metrics"
+	_ "knative.dev/pkg/metrics/testing"
+	"knative.dev/pkg/ptr"
+	"knative.dev/pkg/system"
+	_ "knative.dev/pkg/system/testing"
 )
 
 var (
@@ -533,7 +533,7 @@ func TestMakePodSpec(t *testing.T) {
 				userContainer(),
 				queueContainer(
 					withEnvVar("CONTAINER_CONCURRENCY", "0"),
-					withArgs([]string{"--readiness-probe", fmt.Sprintf(`{"httpGet":{"path":"/","port":%d,"host":"127.0.0.1","scheme":"HTTP"}}`, v1alpha1.DefaultUserPort)}),
+					withArgs([]string{"--readiness-probe", fmt.Sprintf(`{"httpGet":{"path":"/","port":%d,"host":"127.0.0.1","scheme":"HTTP","httpHeaders":[{"name":"K-Kubelet-Probe","value":"queue"}]}}`, v1alpha1.DefaultUserPort)}),
 				),
 			}),
 	}, {

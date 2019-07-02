@@ -22,16 +22,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/knative/serving/pkg/network"
 	"github.com/knative/serving/pkg/resources"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"knative.dev/pkg/logging"
-	pkgmetrics "knative.dev/pkg/metrics"
-	_ "knative.dev/pkg/metrics/testing"
-	"knative.dev/pkg/ptr"
-	"knative.dev/pkg/system"
-	_ "knative.dev/pkg/system/testing"
 	"github.com/knative/serving/pkg/apis/networking"
 	"github.com/knative/serving/pkg/apis/serving"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -45,6 +40,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"knative.dev/pkg/logging"
+	pkgmetrics "knative.dev/pkg/metrics"
+	_ "knative.dev/pkg/metrics/testing"
+	"knative.dev/pkg/ptr"
+	"knative.dev/pkg/system"
+	_ "knative.dev/pkg/system/testing"
 )
 
 var defaultKnativeQReadinessProbe = &corev1.Probe{
@@ -675,6 +676,10 @@ func TestProbeGenerationHTTPDefaults(t *testing.T) {
 				Path:   "/",
 				Port:   intstr.FromInt(int(v1alpha1.DefaultUserPort)),
 				Scheme: corev1.URISchemeHTTP,
+				HTTPHeaders: []corev1.HTTPHeader{{
+					Name:  network.KubeletProbeHeaderName,
+					Value: "queue",
+				}},
 			},
 		},
 		PeriodSeconds:  1,
@@ -759,6 +764,10 @@ func TestProbeGenerationHTTP(t *testing.T) {
 				Path:   probePath,
 				Port:   intstr.FromInt(userPort),
 				Scheme: corev1.URISchemeHTTPS,
+				HTTPHeaders: []corev1.HTTPHeader{{
+					Name:  network.KubeletProbeHeaderName,
+					Value: "queue",
+				}},
 			},
 		},
 		PeriodSeconds:  2,
