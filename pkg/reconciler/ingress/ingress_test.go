@@ -593,7 +593,6 @@ func TestReconcile(t *testing.T) {
 					return true, nil
 				},
 			},
-			ingressLister: listers.GetIngressLister(),
 		}
 		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, controller.Options{
 			ConfigStore: &testConfigStore{
@@ -1008,7 +1007,6 @@ func TestReconcile_EnableAutoTLS(t *testing.T) {
 					return true, nil
 				},
 			},
-			ingressLister: listers.GetIngressLister(),
 		}
 		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, controller.Options{
 			ConfigStore: &testConfigStore{
@@ -1092,17 +1090,21 @@ func ingressTLSWithSecretNamespace(namespace string) []v1alpha1.IngressTLS {
 	return result
 }
 
-func patchAddFinalizerAction(ingressName, finalizer string) clientgotesting.PatchActionImpl {
-	action := clientgotesting.PatchActionImpl{
-		Name: ingressName,
-	}
+func getPatchFinalizerAction(finalizer string) string {
 	var patch string
 	if finalizer != "" {
 		patch = fmt.Sprintf(`{"metadata":{"finalizers":[%q],"resourceVersion":"v1"}}`, finalizer)
 	} else {
 		patch = `{"metadata":{"finalizers":[],"resourceVersion":"v1"}}`
 	}
-	action.Patch = []byte(patch)
+	return patch
+}
+
+func patchAddFinalizerAction(ingressName, finalizer string) clientgotesting.PatchActionImpl {
+	action := clientgotesting.PatchActionImpl{
+		Name: ingressName,
+	}
+	action.Patch = []byte(getPatchFinalizerAction(finalizer))
 	return action
 }
 
