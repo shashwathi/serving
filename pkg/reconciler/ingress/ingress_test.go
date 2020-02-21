@@ -594,7 +594,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 		}
-		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, controller.Options{
+		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, network.IstioIngressClassName, controller.Options{
 			ConfigStore: &testConfigStore{
 				config: ReconcilerTestConfig(),
 			}})
@@ -732,9 +732,6 @@ func TestReconcile_EnableAutoTLS(t *testing.T) {
 		},
 		WantUpdates: []clientgotesting.UpdateActionImpl{{
 			Object: gateway(networking.KnativeIngressGateway, system.Namespace(), []*istiov1alpha3.Server{ingressHTTPRedirectServer, irrelevantServer}),
-		}, {
-			// Finalizer should be removed.
-			Object: ingressWithFinalizers("reconciling-ingress", 1234, ingressTLS, []string{}, &deletionTime),
 		}},
 		WantPatches: []clientgotesting.PatchActionImpl{
 			patchAddFinalizerAction("reconciling-ingress", ""),
@@ -1008,7 +1005,7 @@ func TestReconcile_EnableAutoTLS(t *testing.T) {
 				},
 			},
 		}
-		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, controller.Options{
+		return ingressreconciler.NewReconciler(ctx, r.Logger, r.ServingClientSet, listers.GetIngressLister(), r.Recorder, r, network.IstioIngressClassName, controller.Options{
 			ConfigStore: &testConfigStore{
 				// Enable reconciling gateway.
 				config: &config.Config{

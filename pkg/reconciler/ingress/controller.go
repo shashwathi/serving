@@ -78,19 +78,20 @@ func newControllerWithOptions(
 	}
 	myFilterFunc := reconciler.AnnotationFilterFunc(networking.IngressClassAnnotationKey, network.IstioIngressClassName, true)
 
-	impl := ingressreconciler.NewImpl(ctx, c, func(impl *controller.Impl) controller.Options {
-		c.Logger.Info("Setting up ConfigMap receivers")
-		configsToResync := []interface{}{
-			&config.Istio{},
-			&network.Config{},
-		}
-		resyncIngressesOnConfigChange := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
-			impl.FilteredGlobalResync(myFilterFunc, ingressInformer.Informer())
+	impl := ingressreconciler.NewImpl(ctx, c, network.IstioIngressClassName,
+		func(impl *controller.Impl) controller.Options {
+			c.Logger.Info("Setting up ConfigMap receivers")
+			configsToResync := []interface{}{
+				&config.Istio{},
+				&network.Config{},
+			}
+			resyncIngressesOnConfigChange := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
+				impl.FilteredGlobalResync(myFilterFunc, ingressInformer.Informer())
+			})
+			configStore := config.NewStore(c.Logger.Named("config-store"), resyncIngressesOnConfigChange)
+			configStore.WatchConfigs(cmw)
+			return controller.Options{ConfigStore: configStore}
 		})
-		configStore := config.NewStore(c.Logger.Named("config-store"), resyncIngressesOnConfigChange)
-		configStore.WatchConfigs(cmw)
-		return controller.Options{ConfigStore: configStore}
-	})
 
 	c.Logger.Info("Setting up Ingress event handlers")
 	ingressHandler := cache.FilteringResourceEventHandler{
