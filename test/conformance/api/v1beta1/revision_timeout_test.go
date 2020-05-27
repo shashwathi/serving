@@ -104,7 +104,7 @@ func TestRevisionTimeout(t *testing.T) {
 	t.Parallel()
 	clients := test.Setup(t)
 
-	var rev2s, rev5s test.ResourceNames
+	var rev7s, rev5s test.ResourceNames
 	names := test.ResourceNames{
 		Service: test.ObjectNameForTest(t),
 		Image:   test.Timeout,
@@ -114,7 +114,7 @@ func TestRevisionTimeout(t *testing.T) {
 	defer test.TearDown(clients, names)
 
 	t.Log("Creating a new Service ")
-	svc, err := createService(t, clients, names, 2)
+	svc, err := createService(t, clients, names, 7)
 	if err != nil {
 		t.Fatal("Failed to create Service:", err)
 	}
@@ -126,7 +126,7 @@ func TestRevisionTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Service %s was not updated with the new revision: %v", names.Service, err)
 	}
-	rev2s.Revision = revisionName
+	rev7s.Revision = revisionName
 
 	t.Log("When the Service reports as Ready, everything should be ready")
 	if err := v1b1test.WaitForServiceState(clients.ServingBetaClient, names.Service, v1b1test.IsServiceReady, "ServiceIsReady"); err != nil {
@@ -139,8 +139,8 @@ func TestRevisionTimeout(t *testing.T) {
 		t.Fatalf("Patch update for Service %s with new timeout 5s failed: %v", names.Service, err)
 	}
 
-	// getNextRevisionName waits for names.Revision to change, so we set it to the rev2s revision and wait for the (new) rev5s revision.
-	names.Revision = rev2s.Revision
+	// getNextRevisionName waits for names.Revision to change, so we set it to the rev7s revision and wait for the (new) rev5s revision.
+	names.Revision = rev7s.Revision
 
 	t.Log("Since the Service was updated a new Revision will be created and the Service will be updated")
 	rev5s.Revision, err = v1b1test.WaitForServiceLatestRevision(clients, names)
@@ -148,9 +148,9 @@ func TestRevisionTimeout(t *testing.T) {
 		t.Fatalf("Service %s was not updated with the Revision with timeout 5s: %v", names.Service, err)
 	}
 
-	t.Logf("Waiting for revision %q to be ready", rev2s.Revision)
-	if err := v1b1test.WaitForRevisionState(clients.ServingBetaClient, rev2s.Revision, v1b1test.IsRevisionReady, "RevisionIsReady"); err != nil {
-		t.Fatalf("The Revision %q still can't serve traffic: %v", rev2s.Revision, err)
+	t.Logf("Waiting for revision %q to be ready", rev7s.Revision)
+	if err := v1b1test.WaitForRevisionState(clients.ServingBetaClient, rev7s.Revision, v1b1test.IsRevisionReady, "RevisionIsReady"); err != nil {
+		t.Fatalf("The Revision %q still can't serve traffic: %v", rev7s.Revision, err)
 	}
 	t.Logf("Waiting for revision %q to be ready", rev5s.Revision)
 	if err := v1b1test.WaitForRevisionState(clients.ServingBetaClient, rev5s.Revision, v1b1test.IsRevisionReady, "RevisionIsReady"); err != nil {
@@ -158,14 +158,14 @@ func TestRevisionTimeout(t *testing.T) {
 	}
 
 	// Set names for traffic targets to make them directly routable.
-	rev2s.TrafficTarget = "rev2s"
+	rev7s.TrafficTarget = "rev7s"
 	rev5s.TrafficTarget = "rev5s"
 
 	t.Log("Updating RouteSpec")
 	if _, err := v1b1test.UpdateServiceRouteSpec(t, clients, names, v1.RouteSpec{
 		Traffic: []v1.TrafficTarget{{
-			Tag:          rev2s.TrafficTarget,
-			RevisionName: rev2s.Revision,
+			Tag:          rev7s.TrafficTarget,
+			RevisionName: rev7s.Revision,
 			Percent:      ptr.Int64(50),
 		}, {
 			Tag:          rev5s.TrafficTarget,
@@ -186,16 +186,16 @@ func TestRevisionTimeout(t *testing.T) {
 		t.Fatalf("Error fetching Service %s: %v", names.Service, err)
 	}
 
-	var rev2sURL, rev5sURL *url.URL
+	var rev7sURL, rev5sURL *url.URL
 	for _, tt := range service.Status.Traffic {
-		if tt.Tag == rev2s.TrafficTarget {
-			rev2sURL = tt.URL.URL()
+		if tt.Tag == rev7s.TrafficTarget {
+			rev7sURL = tt.URL.URL()
 		}
 		if tt.Tag == rev5s.TrafficTarget {
 			rev5sURL = tt.URL.URL()
 		}
 	}
-	if rev2sURL == nil || rev5sURL == nil {
+	if rev7sURL == nil || rev5sURL == nil {
 		t.Fatalf("Unable to fetch URLs from traffic targets: %#v", service.Status.Traffic)
 	}
 
@@ -210,37 +210,26 @@ func TestRevisionTimeout(t *testing.T) {
 		test.AddRootCAtoTransport(t.Logf, clients, test.ServingFlags.Https)); err != nil {
 		t.Fatalf("Error probing %s: %v", rev5sURL, err)
 	}
-	t.Log("Probing", rev2sURL)
-	if _, err := pkgTest.WaitForEndpointState(
-		clients.KubeClient,
-		t.Logf,
-		rev2sURL,
-		v1b1test.RetryingRouteInconsistency(pkgTest.IsOneOfStatusCodes(http.StatusOK, http.StatusGatewayTimeout)),
-		"WaitForSuccessfulResponse",
-		test.ServingFlags.ResolvableDomain,
-		test.AddRootCAtoTransport(t.Logf, clients, test.ServingFlags.Https)); err != nil {
-		t.Fatalf("Error probing %s: %v", rev2sURL, err)
-	}
 
 	// Quick sanity check
-	if err := sendRequest(t, clients, rev2sURL, 0, 0, http.StatusOK); err != nil {
-		t.Errorf("Failed request with sleep 0s with revision timeout 2s: %v", err)
+	if err := sendRequest(t, clients, rev7sURL, 0, 0, http.StatusOK); err != nil {
+		t.Errorf("Failed request with sleep 0s with revision timeout 7s: %v", err)
 	}
 	if err := sendRequest(t, clients, rev5sURL, 0, 0, http.StatusOK); err != nil {
 		t.Errorf("Failed request with sleep 0s with revision timeout 5s: %v", err)
 	}
 
 	// Fail by surpassing the initial timeout.
-	if err := sendRequest(t, clients, rev2sURL, 5*time.Second, 0, http.StatusGatewayTimeout); err != nil {
-		t.Errorf("Did not fail request with sleep 5s with revision timeout 2s: %v", err)
+	if err := sendRequest(t, clients, rev7sURL, 9*time.Second, 0, http.StatusGatewayTimeout); err != nil {
+		t.Errorf("Did not fail request with sleep 9s with revision timeout 7s: %v", err)
 	}
 	if err := sendRequest(t, clients, rev5sURL, 7*time.Second, 0, http.StatusGatewayTimeout); err != nil {
 		t.Errorf("Did not fail request with sleep 7s with revision timeout 5s: %v", err)
 	}
 
 	// Not fail by not surpassing in the initial timeout, but in the overall request duration.
-	if err := sendRequest(t, clients, rev2sURL, time.Second, 3*time.Second, http.StatusOK); err != nil {
-		t.Errorf("Did not fail request with sleep 1s/3s with revision timeout 2s: %v", err)
+	if err := sendRequest(t, clients, rev7sURL, 3*time.Second, 5*time.Second, http.StatusOK); err != nil {
+		t.Errorf("Did not fail request with sleep 3s/5s with revision timeout 7s: %v", err)
 	}
 	if err := sendRequest(t, clients, rev5sURL, 3*time.Second, 3*time.Second, http.StatusOK); err != nil {
 		t.Errorf("Failed request with sleep 3s/3s with revision timeout 5s: %v", err)
